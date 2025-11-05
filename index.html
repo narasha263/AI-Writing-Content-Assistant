@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Writing Assistant</title>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+        }
+        .typing-animation {
+            border-right: 2px solid #3b82f6;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { border-color: transparent; }
+            51%, 100% { border-color: #3b82f6; }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="min-h-full bg-gradient-to-br from-blue-50 to-indigo-100">
+  <div class="min-h-full flex flex-col"><!-- Header -->
+   <header class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+     <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+       <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+        </svg>
+       </div>
+       <h1 id="app-title" class="text-2xl font-bold text-gray-900">AI Writing Assistant</h1>
+      </div>
+      <div class="flex items-center space-x-4"><span class="text-sm text-gray-500">History: <span id="history-count">0</span></span> <button id="clear-history" class="text-sm text-red-600 hover:text-red-800 transition-colors">Clear All</button>
+      </div>
+     </div>
+    </div>
+   </header><!-- Main Content -->
+   <main class="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8"><!-- Welcome Section -->
+    <div class="text-center mb-8">
+     <h2 id="welcome-message" class="text-3xl font-bold text-gray-900 mb-4">Welcome to your AI writing companion</h2>
+     <p class="text-lg text-gray-600 max-w-2xl mx-auto">Generate creative prompts, get writing assistance, and enhance your content with AI-powered suggestions designed for students and writers.</p>
+    </div><!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"><button class="prompt-btn bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all text-left" data-type="essay">
+      <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+       <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+       </svg>
+      </div><h3 class="font-semibold text-gray-900 mb-2">Essay Prompts</h3><p class="text-sm text-gray-600">Generate engaging essay topics and thesis statements</p></button> <button class="prompt-btn bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all text-left" data-type="creative">
+      <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+       <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+       </svg>
+      </div><h3 class="font-semibold text-gray-900 mb-2">Creative Writing</h3><p class="text-sm text-gray-600">Spark creativity with story ideas and character prompts</p></button> <button class="prompt-btn bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all text-left" data-type="research">
+      <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+       <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+       </svg>
+      </div><h3 class="font-semibold text-gray-900 mb-2">Research Questions</h3><p class="text-sm text-gray-600">Develop focused research questions and methodologies</p></button>
+    </div><!-- Input Section -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+     <form id="prompt-form" class="space-y-4">
+      <div><label for="user-input" class="block text-sm font-medium text-gray-700 mb-2">What would you like help with?</label> <textarea id="user-input" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" placeholder="Ask for writing prompts, essay topics, research questions, or any writing assistance..."></textarea>
+      </div>
+      <div class="flex justify-between items-center">
+       <div class="text-sm text-gray-500"><span id="char-count">0</span>/500 characters
+       </div><button type="submit" id="generate-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center space-x-2"> <span>Generate Response</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+        </svg></button>
+      </div>
+     </form>
+    </div><!-- Response Section -->
+    <div id="response-section" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 hidden">
+     <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-gray-900">AI Response</h3><button id="save-response" class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full hover:bg-green-200 transition-colors"> Save to History </button>
+     </div>
+     <div id="response-content" class="prose max-w-none text-gray-700"></div>
+    </div><!-- History Section -->
+    <div id="history-section" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+     <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent History</h3>
+     <div id="history-list" class="space-y-4">
+      <p class="text-gray-500 text-center py-8">No saved responses yet. Generate some content to get started!</p>
+     </div>
+    </div>
+   </main><!-- Footer -->
+   <footer class="bg-white border-t border-gray-200 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+     <p id="footer-text" class="text-center text-gray-600">Powered by AI Writing Assistant</p>
+    </div>
+   </footer>
+  </div>
+  <script>
+        // Configuration
+        const defaultConfig = {
+            app_title: "AI Writing Assistant",
+            welcome_message: "Welcome to your AI writing companion",
+            footer_text: "Powered by AI Writing Assistant",
+            primary_color: "#3b82f6",
+            surface_color: "#ffffff",
+            text_color: "#1f2937",
+            accent_color: "#10b981",
+            background_color: "#f8fafc",
+            font_family: "Inter",
+            font_size: 16
+        };
+
+        let currentData = [];
+        let isLoading = false;
+
+        // Sample responses for different types
+        const sampleResponses = {
+            essay: [
+                "Here are some compelling essay prompts:\n\n1. **Technology and Human Connection**: Analyze how social media has changed the way we form and maintain relationships. Consider both positive and negative impacts.\n\n2. **Climate Change Solutions**: Argue for the most effective approach to addressing climate change - individual action, government policy, or corporate responsibility.\n\n3. **Education Evolution**: Should traditional classroom learning be replaced by personalized online education? Discuss the benefits and drawbacks.\n\n4. **Artificial Intelligence Ethics**: Examine the ethical implications of AI in decision-making processes that affect human lives.\n\n5. **Cultural Preservation**: How can societies balance modernization with preserving traditional cultures and values?",
+                
+                "Consider these thought-provoking essay topics:\n\n1. **Digital Privacy Rights**: In an age of data collection, what privacy rights should individuals have, and how can they be protected?\n\n2. **Mental Health Awareness**: Analyze the stigma surrounding mental health and propose solutions for creating more supportive communities.\n\n3. **Sustainable Living**: Evaluate the role of individual lifestyle changes versus systemic changes in achieving environmental sustainability.\n\n4. **Future of Work**: How will automation and AI reshape the job market, and how should society prepare for these changes?\n\n5. **Social Media Influence**: Examine the impact of influencer culture on young people's values and aspirations."
+            ],
+            creative: [
+                "Here are some creative writing prompts to spark your imagination:\n\n1. **The Memory Thief**: In a world where memories can be extracted and sold, your character discovers they have a memory that doesn't belong to them.\n\n2. **Last Library**: You're the guardian of the world's last physical library. Describe a day when someone discovers the power of books for the first time.\n\n3. **Time Capsule**: A character finds a time capsule from 50 years in the future. What does it contain, and how does it change their life?\n\n4. **The Color Collector**: In a gray world, your protagonist has the rare ability to see and collect colors. What happens when they meet someone else who can see them too?\n\n5. **Reverse Aging**: Write about a society where people age backwards. Explore the challenges and advantages of this phenomenon.",
+                
+                "Explore these creative story starters:\n\n1. **The Dream Architect**: Your character designs dreams for people who can't dream naturally. What happens when a nightmare escapes into reality?\n\n2. **Language of Plants**: A botanist discovers that plants have been trying to communicate with humans all along. What are they trying to say?\n\n3. **The Emotion Merchant**: In a world where emotions can be bottled and traded, your character runs a black market for forbidden feelings.\n\n4. **Parallel Lives**: Every decision creates a parallel universe. Your character starts receiving messages from their alternate selves.\n\n5. **The Last Storyteller**: In a world where all stories have been told, your character discovers a new one. But telling it comes with a price."
+            ],
+            research: [
+                "Here are focused research questions to guide your investigation:\n\n1. **Social Media and Mental Health**: How does the amount of time spent on social media platforms correlate with anxiety and depression levels among college students?\n\n2. **Remote Work Productivity**: What factors contribute to maintaining productivity and job satisfaction in remote work environments compared to traditional office settings?\n\n3. **Sustainable Urban Planning**: How can cities implement green infrastructure to reduce urban heat islands while maintaining economic growth?\n\n4. **Educational Technology**: What is the effectiveness of gamification in improving student engagement and learning outcomes in STEM subjects?\n\n5. **Healthcare Access**: How do telemedicine services impact healthcare accessibility in rural communities, and what are the barriers to implementation?",
+                
+                "Consider these research directions:\n\n1. **Artificial Intelligence in Education**: How does AI-powered personalized learning affect student achievement across different socioeconomic backgrounds?\n\n2. **Climate Change Communication**: What communication strategies are most effective in motivating climate action among different demographic groups?\n\n3. **Workplace Diversity**: How does diversity in leadership positions impact company innovation and financial performance?\n\n4. **Digital Divide**: What are the long-term educational consequences of unequal access to technology during remote learning periods?\n\n5. **Mental Health Interventions**: How effective are app-based mindfulness interventions compared to traditional therapy for managing stress in young adults?"
+            ]
+        };
+
+        // Data SDK Handler
+        const dataHandler = {
+            onDataChanged(data) {
+                currentData = data;
+                updateHistoryDisplay();
+                updateHistoryCount();
+            }
+        };
+
+        // Elements SDK Implementation
+        async function onConfigChange(config) {
+            const appTitle = config.app_title || defaultConfig.app_title;
+            const welcomeMessage = config.welcome_message || defaultConfig.welcome_message;
+            const footerText = config.footer_text || defaultConfig.footer_text;
+            const primaryColor = config.primary_color || defaultConfig.primary_color;
+            const surfaceColor = config.surface_color || defaultConfig.surface_color;
+            const textColor = config.text_color || defaultConfig.text_color;
+            const accentColor = config.accent_color || defaultConfig.accent_color;
+            const backgroundColor = config.background_color || defaultConfig.background_color;
+            const fontFamily = config.font_family || defaultConfig.font_family;
+            const fontSize = config.font_size || defaultConfig.font_size;
+
+            // Update text content
+            document.getElementById('app-title').textContent = appTitle;
+            document.getElementById('welcome-message').textContent = welcomeMessage;
+            document.getElementById('footer-text').textContent = footerText;
+
+            // Update colors
+            document.body.style.background = `linear-gradient(to bottom right, ${backgroundColor}, ${primaryColor}15)`;
+            
+            // Update all white surfaces
+            const surfaces = document.querySelectorAll('.bg-white');
+            surfaces.forEach(surface => {
+                surface.style.backgroundColor = surfaceColor;
+            });
+
+            // Update primary buttons
+            const primaryButtons = document.querySelectorAll('.bg-blue-600, #generate-btn');
+            primaryButtons.forEach(btn => {
+                btn.style.backgroundColor = primaryColor;
+                btn.style.borderColor = primaryColor;
+            });
+
+            // Update text colors
+            const textElements = document.querySelectorAll('.text-gray-900, h1, h2, h3');
+            textElements.forEach(el => {
+                el.style.color = textColor;
+            });
+
+            // Update accent elements
+            const accentElements = document.querySelectorAll('.text-green-800, #save-response');
+            accentElements.forEach(el => {
+                el.style.color = accentColor;
+            });
+
+            // Update fonts
+            const fontStack = `${fontFamily}, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+            document.body.style.fontFamily = fontStack;
+
+            // Update font sizes proportionally
+            document.getElementById('app-title').style.fontSize = `${fontSize * 1.5}px`;
+            document.getElementById('welcome-message').style.fontSize = `${fontSize * 1.875}px`;
+            document.body.style.fontSize = `${fontSize}px`;
+        }
+
+        // Initialize SDKs
+        async function initializeApp() {
+            try {
+                // Initialize Data SDK
+                const dataResult = await window.dataSdk.init(dataHandler);
+                if (!dataResult.isOk) {
+                    console.error('Failed to initialize data SDK');
+                }
+
+                // Initialize Elements SDK
+                if (window.elementSdk) {
+                    await window.elementSdk.init({
+                        defaultConfig,
+                        onConfigChange,
+                        mapToCapabilities: (config) => ({
+                            recolorables: [
+                                {
+                                    get: () => config.primary_color || defaultConfig.primary_color,
+                                    set: (value) => {
+                                        config.primary_color = value;
+                                        window.elementSdk.setConfig({ primary_color: value });
+                                    }
+                                },
+                                {
+                                    get: () => config.surface_color || defaultConfig.surface_color,
+                                    set: (value) => {
+                                        config.surface_color = value;
+                                        window.elementSdk.setConfig({ surface_color: value });
+                                    }
+                                },
+                                {
+                                    get: () => config.text_color || defaultConfig.text_color,
+                                    set: (value) => {
+                                        config.text_color = value;
+                                        window.elementSdk.setConfig({ text_color: value });
+                                    }
+                                },
+                                {
+                                    get: () => config.accent_color || defaultConfig.accent_color,
+                                    set: (value) => {
+                                        config.accent_color = value;
+                                        window.elementSdk.setConfig({ accent_color: value });
+                                    }
+                                },
+                                {
+                                    get: () => config.background_color || defaultConfig.background_color,
+                                    set: (value) => {
+                                        config.background_color = value;
+                                        window.elementSdk.setConfig({ background_color: value });
+                                    }
+                                }
+                            ],
+                            borderables: [],
+                            fontEditable: {
+                                get: () => config.font_family || defaultConfig.font_family,
+                                set: (value) => {
+                                    config.font_family = value;
+                                    window.elementSdk.setConfig({ font_family: value });
+                                }
+                            },
+                            fontSizeable: {
+                                get: () => config.font_size || defaultConfig.font_size,
+                                set: (value) => {
+                                    config.font_size = value;
+                                    window.elementSdk.setConfig({ font_size: value });
+                                }
+                            }
+                        }),
+                        mapToEditPanelValues: (config) => new Map([
+                            ["app_title", config.app_title || defaultConfig.app_title],
+                            ["welcome_message", config.welcome_message || defaultConfig.welcome_message],
+                            ["footer_text", config.footer_text || defaultConfig.footer_text]
+                        ])
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to initialize app:', error);
+            }
+        }
+
+        // Generate AI response
+        function generateResponse(prompt, type = 'general') {
+            if (!prompt.trim()) return "Please provide a prompt or question to get started.";
+
+            const responses = sampleResponses[type] || sampleResponses.essay;
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            
+            // Add some personalization based on the prompt
+            if (prompt.toLowerCase().includes('student')) {
+                return randomResponse + "\n\n💡 **Student Tip**: Remember to cite your sources and develop your arguments with specific examples and evidence.";
+            } else if (prompt.toLowerCase().includes('writer') || prompt.toLowerCase().includes('writing')) {
+                return randomResponse + "\n\n✍️ **Writer's Note**: Consider your audience and purpose when developing these ideas. Don't forget to revise and edit your work.";
+            }
+            
+            return randomResponse;
+        }
+
+        // Update history display
+        function updateHistoryDisplay() {
+            const historyList = document.getElementById('history-list');
+            
+            if (currentData.length === 0) {
+                historyList.innerHTML = '<p class="text-gray-500 text-center py-8">No saved responses yet. Generate some content to get started!</p>';
+                return;
+            }
+
+            const sortedData = [...currentData].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            historyList.innerHTML = sortedData.map(item => `
+                <div class="border border-gray-200 rounded-lg p-4 fade-in">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">${item.type}</span>
+                        <div class="flex space-x-2">
+                            <span class="text-xs text-gray-400">${new Date(item.timestamp).toLocaleDateString()}</span>
+                            <button onclick="deleteHistoryItem('${item.id}')" class="text-xs text-red-500 hover:text-red-700">Delete</button>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-2"><strong>Prompt:</strong> ${item.prompt}</div>
+                    <div class="text-sm text-gray-700 whitespace-pre-line">${item.response}</div>
+                </div>
+            `).join('');
+        }
+
+        // Update history count
+        function updateHistoryCount() {
+            document.getElementById('history-count').textContent = currentData.length;
+        }
+
+        // Delete history item
+        async function deleteHistoryItem(id) {
+            const item = currentData.find(item => item.id === id);
+            if (!item) return;
+
+            const result = await window.dataSdk.delete(item);
+            if (!result.isOk) {
+                showToast('Failed to delete item', 'error');
+            }
+        }
+
+        // Clear all history
+        async function clearAllHistory() {
+            if (currentData.length >= 999) {
+                showToast('Maximum limit of 999 items reached. Please delete some items first.', 'error');
+                return;
+            }
+
+            for (const item of currentData) {
+                await window.dataSdk.delete(item);
+            }
+        }
+
+        // Show toast message
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${type === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
+
+            // Character counter
+            const userInput = document.getElementById('user-input');
+            const charCount = document.getElementById('char-count');
+            
+            userInput.addEventListener('input', () => {
+                const count = userInput.value.length;
+                charCount.textContent = count;
+                charCount.className = count > 450 ? 'text-red-500' : 'text-gray-500';
+            });
+
+            // Quick prompt buttons
+            document.querySelectorAll('.prompt-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const type = btn.dataset.type;
+                    const prompts = {
+                        essay: "Generate essay prompts for college students",
+                        creative: "Give me creative writing prompts for storytelling",
+                        research: "Suggest research questions for academic papers"
+                    };
+                    
+                    userInput.value = prompts[type];
+                    charCount.textContent = userInput.value.length;
+                    userInput.focus();
+                });
+            });
+
+            // Form submission
+            document.getElementById('prompt-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                if (isLoading) return;
+                
+                const prompt = userInput.value.trim();
+                if (!prompt) {
+                    showToast('Please enter a prompt or question', 'error');
+                    return;
+                }
+
+                if (prompt.length > 500) {
+                    showToast('Please keep your prompt under 500 characters', 'error');
+                    return;
+                }
+
+                isLoading = true;
+                const generateBtn = document.getElementById('generate-btn');
+                const originalText = generateBtn.innerHTML;
+                generateBtn.innerHTML = '<span>Generating...</span><div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>';
+                generateBtn.disabled = true;
+
+                // Simulate AI processing time
+                setTimeout(() => {
+                    const type = prompt.toLowerCase().includes('essay') ? 'essay' : 
+                                prompt.toLowerCase().includes('creative') || prompt.toLowerCase().includes('story') ? 'creative' :
+                                prompt.toLowerCase().includes('research') ? 'research' : 'essay';
+                    
+                    const response = generateResponse(prompt, type);
+                    
+                    // Show response
+                    const responseSection = document.getElementById('response-section');
+                    const responseContent = document.getElementById('response-content');
+                    
+                    responseContent.innerHTML = response.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    responseSection.classList.remove('hidden');
+                    responseSection.scrollIntoView({ behavior: 'smooth' });
+
+                    // Store current response for saving
+                    window.currentResponse = { prompt, response, type };
+
+                    isLoading = false;
+                    generateBtn.innerHTML = originalText;
+                    generateBtn.disabled = false;
+                }, 2000);
+            });
+
+            // Save response
+            document.getElementById('save-response').addEventListener('click', async () => {
+                if (!window.currentResponse) return;
+
+                if (currentData.length >= 999) {
+                    showToast('Maximum limit of 999 items reached. Please delete some items first.', 'error');
+                    return;
+                }
+
+                const saveBtn = document.getElementById('save-response');
+                saveBtn.textContent = 'Saving...';
+                saveBtn.disabled = true;
+
+                const newItem = {
+                    id: Date.now().toString(),
+                    type: window.currentResponse.type,
+                    prompt: window.currentResponse.prompt,
+                    response: window.currentResponse.response,
+                    timestamp: new Date().toISOString()
+                };
+
+                const result = await window.dataSdk.create(newItem);
+                
+                if (result.isOk) {
+                    showToast('Response saved to history!');
+                    window.currentResponse = null;
+                    document.getElementById('response-section').classList.add('hidden');
+                    document.getElementById('user-input').value = '';
+                    document.getElementById('char-count').textContent = '0';
+                } else {
+                    showToast('Failed to save response', 'error');
+                }
+
+                saveBtn.textContent = 'Save to History';
+                saveBtn.disabled = false;
+            });
+
+            // Clear history
+            document.getElementById('clear-history').addEventListener('click', () => {
+                if (currentData.length === 0) return;
+                
+                const confirmDiv = document.createElement('div');
+                confirmDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                confirmDiv.innerHTML = `
+                    <div class="bg-white p-6 rounded-lg max-w-sm mx-4">
+                        <h3 class="text-lg font-semibold mb-4">Clear All History?</h3>
+                        <p class="text-gray-600 mb-6">This action cannot be undone.</p>
+                        <div class="flex space-x-3">
+                            <button id="confirm-clear" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Clear All</button>
+                            <button id="cancel-clear" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(confirmDiv);
+                
+                document.getElementById('confirm-clear').addEventListener('click', () => {
+                    clearAllHistory();
+                    confirmDiv.remove();
+                });
+                
+                document.getElementById('cancel-clear').addEventListener('click', () => {
+                    confirmDiv.remove();
+                });
+            });
+        });
+
+        // Make deleteHistoryItem globally available
+        window.deleteHistoryItem = deleteHistoryItem;
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'995185ce543c50dd',t:'MTc2MTU2MTA3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
